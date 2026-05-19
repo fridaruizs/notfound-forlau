@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRequestContext } from "@cloudflare/next-on-pages";
 
 export const runtime = "edge";
 
@@ -9,9 +8,6 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { env } = getRequestContext();
-    const db = (env as any).notfound_db as D1Database;
-
     const body = await request.json() as { name?: unknown };
     const name = body.name;
 
@@ -19,7 +15,7 @@ export async function PUT(
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const existing = await db
+    const existing = await notfound_db
       .prepare(`SELECT "protected" FROM categories WHERE id = ?`)
       .bind(id)
       .first() as { protected: number } | null;
@@ -33,7 +29,7 @@ export async function PUT(
 
     const trimmed = name.trim().toLowerCase();
 
-    await db
+    await notfound_db
       .prepare("UPDATE categories SET name = ? WHERE id = ?")
       .bind(trimmed, id)
       .run();
@@ -55,10 +51,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { env } = getRequestContext();
-    const db = (env as any).notfound_db as D1Database;
 
-    const existing = await db
+    const existing = await notfound_db
       .prepare(`SELECT "protected" FROM categories WHERE id = ?`)
       .bind(id)
       .first() as { protected: number } | null;
@@ -70,18 +64,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Cannot delete a protected category" }, { status: 403 });
     }
 
-    const uncategorized = await db
+    const uncategorized = await notfound_db
       .prepare(`SELECT id FROM categories WHERE name = 'sin categoría' AND "protected" = 1`)
       .first() as { id: string } | null;
 
     if (uncategorized) {
-      await db
+      await notfound_db
         .prepare("UPDATE images SET category_id = ? WHERE category_id = ?")
         .bind(uncategorized.id, id)
         .run();
     }
 
-    await db
+    await notfound_db
       .prepare("DELETE FROM categories WHERE id = ?")
       .bind(id)
       .run();

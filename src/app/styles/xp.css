@@ -1,0 +1,179 @@
+/* ── XP THEME VARIABLES ── */
+:root {
+  --xp-bg: #C0C0C0;
+  --xp-btn: #D4D0C8;
+  --xp-btn-hover: #E0DDD4;
+  --xp-border-light: #ffffff;
+  --xp-border-dark: #404040;
+  --xp-border-mid: #808080;
+  --xp-titlebar-start: #000080;
+  --xp-titlebar-end: #1084d0;
+  --xp-highlight: #000080;
+  --xp-highlight-text: #ffffff;
+  --xp-header-bg: #808080;
+  --xp-text: #000000;
+  --xp-text-muted: #555555;
+  --xp-input-bg: #ffffff;
+  --xp-shadow: rgba(0, 0, 0, 0.35);
+}
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: 'MS Sans Serif', Tahoma, Geneva, sans-serif;
+  font-size: 13px;
+  background-color: var(--xp-bg);
+  color: var(--xp-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── BUTTONS ── */
+.xp-btn {
+  background-color: var(--xp-btn);
+  border: 2px outset var(--xp-border-light);
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  color: var(--xp-text);
+  flex-shrink: 0;
+}
+.xp-btn:active { border-style: inset; }
+.xp-btn:hover { background: var(--xp-btn-hover); }
+
+.icon-btn {
+  background-color: var(--xp-btn);
+  border: 2px outset var(--xp-border-light);
+  width: 34px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--xp-text);
+  flex-shrink: 0;
+}
+.icon-btn:active { border-style: inset; }
+.icon-btn:hover { background: var(--xp-btn-hover); }
+
+/* ── WINDOW ── */
+.xp-window {
+  background: var(--xp-bg);
+  border: 2px outset var(--xp-border-light);
+  box-shadow: 3px 3px 10px var(--xp-shadow);
+}
+
+.xp-title-bar {
+  background: linear-gradient(to right, var(--xp-titlebar-start), var(--xp-titlebar-end));
+  color: var(--xp-highlight-text);
+  font-weight: bold;
+  font-size: 12px;
+  padding: 3px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.xp-close {
+  background: var(--xp-btn);
+  border: 1px outset var(--xp-border-light);
+  width: 16px;
+  height: 14px;
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--xp-text);
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.xp-close:active { border-style: inset; }
+
+/* ── FORM ELEMENTS ── */
+.xp-form {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.xp-label {
+  font-size: 12px;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.xp-input {
+  width: 100%;
+  padding: 3px 5px;
+  border: 2px inset var(--xp-border-mid);
+  background: var(--xp-input-bg);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.xp-textarea {
+  width: 100%;
+  padding: 3px 5px;
+  border: 2px inset var(--xp-border-mid);
+  background: var(--xp-input-bg);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.xp-form-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 16px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 16px; }
+::-webkit-scrollbar-track { background: var(--xp-bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--xp-btn);
+  border: 2px outset var(--xp-border-light);
+}
+
+/* ── BLINK ANIMATION ── */
+.blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── RESPONSIVE HELPERS ── */
+.btn-label { display: inline; }
+
+@media (max-width: 520px) {
+  .btn-label { display: none; }
+  .icon-btn { width: 30px; height: 26px; font-size: 14px; }
+  .xp-btn { padding: 3px 6px; }
+}

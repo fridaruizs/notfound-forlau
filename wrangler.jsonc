@@ -35,7 +35,20 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"d1_databases": [
+		{
+			"binding": "notfound_db",
+			"database_name": "notfound-db",
+			"database_id": "a826b7a0-ca98-42e2-8154-4be20429971c"
+		}
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "notfound-images",
+			"binding": "notfound_images"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

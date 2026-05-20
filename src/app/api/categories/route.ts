@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const runtime = "edge";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function GET() {
   try {
-    const { results } = await notfound_db
+    const { env } = await getCloudflareContext({ async: true });
+    const db = (env as any).notfound_db as D1Database;
+
+    const { results } = await db
       .prepare(`
         SELECT id, name, "protected",
           (SELECT COUNT(*) FROM images WHERE category_id = categories.id) as image_count
@@ -22,6 +24,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const { env } = await getCloudflareContext({ async: true });
+    const db = (env as any).notfound_db as D1Database;
+
     const body = await request.json() as { name?: unknown };
     const name = body.name;
 
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
     const trimmed = name.trim().toLowerCase();
     const id = crypto.randomUUID();
 
-    await notfound_db
+    await db
       .prepare(`INSERT INTO categories (id, name, "protected") VALUES (?, ?, 0)`)
       .bind(id, trimmed)
       .run();

@@ -4,9 +4,10 @@ interface HeaderProps {
   onLogin: () => void;
   onRegister: () => void;
   onUpload: () => void;
+  onShuffle: () => void;
 }
 
-export default function Header({ onLogin, onRegister, onUpload }: HeaderProps) {
+export default function Header({ onLogin, onRegister, onUpload, onShuffle }: HeaderProps) {
   return (
     <>
       <style>{`
@@ -70,14 +71,7 @@ export default function Header({ onLogin, onRegister, onUpload }: HeaderProps) {
       `}</style>
       <header>
         <div className="header-left">
-          <button className="icon-btn" title="Carpeta">🗁</button>
-          <button
-            className="icon-btn"
-            title="Recargar"
-            onClick={() => window.location.reload()}
-          >
-            ⇄
-          </button>
+          <button className="icon-btn" title="Orden aleatorio" onClick={onShuffle}>⇄</button>
         </div>
 
         <span className="header-title">npclvlc</span>

@@ -16,6 +16,7 @@ export default function Home() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [shuffleKey, setShuffleKey] = useState(0);
 
   return (
     <>
@@ -25,6 +26,7 @@ export default function Home() {
         onLogin={() => { setLoginOpen(true); setRegisterOpen(false); }}
         onRegister={() => { setRegisterOpen(true); setLoginOpen(false); }}
         onUpload={() => setUploadOpen(true)}
+        onShuffle={() => setShuffleKey(k => k + 1)}
       />
 
       <CategoryBar
@@ -36,6 +38,7 @@ export default function Home() {
         <Gallery
           activeCategory={activeCategory}
           refreshKey={refreshKey}
+          shuffleKey={shuffleKey}
         />
       </main>
 

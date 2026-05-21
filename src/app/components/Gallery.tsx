@@ -16,13 +16,23 @@ interface ImageItem {
 interface GalleryProps {
   activeCategory: string;
   refreshKey: number;
+  shuffleKey: number;
 }
 
-export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+export default function Gallery({ activeCategory, refreshKey, shuffleKey }: GalleryProps) {
   const [images, setImages] = useState<ImageItem[]>([]);
+  const [displayed, setDisplayed] = useState<ImageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<ImageItem | null>(null);
 
   const fetchImages = useCallback(async () => {
@@ -31,7 +41,6 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
     try {
       let url = "/api/images";
       if (activeCategory !== "ver todas") {
-        // get category id first
         const catRes = await fetch("/api/categories");
         const catData = await catRes.json() as { categories?: { id: string; name: string }[] };
         const cat = catData.categories?.find(c => c.name === activeCategory);
@@ -40,7 +49,9 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
       const res = await fetch(url);
       const data = await res.json() as { images?: ImageItem[]; error?: string };
       if (data.error) throw new Error(data.error);
-      setImages(data.images ?? []);
+      const fetched = data.images ?? [];
+      setImages(fetched);
+      setDisplayed(fetched);
     } catch (err) {
       setError("No se pudieron cargar las imágenes.");
       console.error(err);
@@ -49,7 +60,14 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
     }
   }, [activeCategory, refreshKey]);
 
+  // Fetch when category or refresh changes
   useEffect(() => { fetchImages(); }, [fetchImages]);
+
+  // Shuffle displayed images without refetching
+  useEffect(() => {
+    if (shuffleKey === 0) return;
+    setDisplayed(prev => shuffleArray(prev));
+  }, [shuffleKey]);
 
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", padding: "60px", fontSize: "12px", color: "#666" }}>
@@ -63,7 +81,7 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
     </div>
   );
 
-  if (images.length === 0) return <EmptyState category={activeCategory} />;
+  if (displayed.length === 0) return <EmptyState category={activeCategory} />;
 
   return (
     <>
@@ -90,14 +108,12 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
         .gallery-item:hover {
           border-color: var(--xp-highlight);
         }
-
         .gallery-img {
           display: block;
           width: 100%;
           height: auto;
           object-fit: cover;
         }
-
         .gallery-overlay {
           position: absolute;
           bottom: 0;
@@ -109,7 +125,6 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
           transition: opacity 0.15s;
         }
         .gallery-item:hover .gallery-overlay { opacity: 1; }
-
         .gallery-title {
           color: white;
           font-size: 11px;
@@ -119,7 +134,6 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
           text-overflow: ellipsis;
           text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
         }
-
         .gallery-cats {
           display: flex;
           flex-wrap: wrap;
@@ -156,7 +170,6 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
         }
         .lightbox-body {
           display: flex;
-          gap: 0;
           overflow: hidden;
           min-height: 0;
         }
@@ -206,13 +219,11 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
       `}</style>
 
       <div className="gallery-grid">
-        {images.map(img => (
+        {displayed.map(img => (
           <div
             key={img.id}
             className="gallery-item"
             onClick={() => setLightbox(img)}
-            onMouseEnter={() => setHoveredId(img.id)}
-            onMouseLeave={() => setHoveredId(null)}
           >
             <img
               src={`/api/images/${img.id}`}
@@ -234,7 +245,6 @@ export default function Gallery({ activeCategory, refreshKey }: GalleryProps) {
         ))}
       </div>
 
-      {/* Lightbox */}
       {lightbox && (
         <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
           <div className="lightbox-window" onClick={e => e.stopPropagation()}>

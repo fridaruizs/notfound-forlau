@@ -12,9 +12,19 @@ export default function Footer() {
           text-shadow: 1px 1px 0 #000;
           letter-spacing: 0.3px;
         }
+        .xp-footer a {
+          color: #a8d4ff;
+          text-decoration: none;
+        }
+        .xp-footer a:hover {
+          text-decoration: underline;
+        }
       `}</style>
       <footer className="xp-footer">
-        © 2026 made with ♡ by frida
+        © 2026 made with ❤︎ by{" "}
+        <a href="https://github.com/fridaruizs" target="_blank" rel="noopener noreferrer">
+          frida ruiz
+        </a>
       </footer>
     </>
   );

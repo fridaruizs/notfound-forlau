@@ -9,7 +9,7 @@ export async function GET() {
     const { results } = await db
       .prepare(`
         SELECT id, name, "protected",
-          (SELECT COUNT(*) FROM images WHERE category_id = categories.id) as image_count
+          (SELECT COUNT(*) FROM image_categories WHERE category_id = categories.id) as image_count
         FROM categories
         ORDER BY "protected" DESC, name ASC
       `)

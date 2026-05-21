@@ -1,19 +1,21 @@
 "use client";
 import { useState } from "react";
-import Bsod from "@/app/components/Bsod";
-import Header from "@/app/components/Header";
-import CategoryBar from "@/app/components/CategoryBar";
-import EmptyState from "@/app/components/EmptyState";
-import LoginModal from "@/app/components/modals/LoginModal";
-import RegisterModal from "@/app/components/modals/RegisterModal";
-import Footer from "@/app/components/Footer";
-
+import Bsod from "./components/Bsod";
+import Header from "./components/Header";
+import CategoryBar from "./components/CategoryBar";
+import Gallery from "./components/Gallery";
+import LoginModal from "./components/modals/LoginModal";
+import RegisterModal from "./components/modals/RegisterModal";
+import UploadModal from "./components/modals/UploadModal";
+import Footer from "./components/Footer";
 
 export default function Home() {
   const [showBsod, setShowBsod] = useState(true);
   const [activeCategory, setActiveCategory] = useState("ver todas");
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   return (
     <>
@@ -22,6 +24,7 @@ export default function Home() {
       <Header
         onLogin={() => { setLoginOpen(true); setRegisterOpen(false); }}
         onRegister={() => { setRegisterOpen(true); setLoginOpen(false); }}
+        onUpload={() => setUploadOpen(true)}
       />
 
       <CategoryBar
@@ -29,14 +32,23 @@ export default function Home() {
         onChange={setActiveCategory}
       />
 
-      <main style={{ background: "var(--xp-bg)", minHeight: "calc(100vh - 90px)" }}>
-        <EmptyState category={activeCategory} />
+      <main style={{ background: "var(--xp-bg)", minHeight: "calc(100vh - 120px)" }}>
+        <Gallery
+          activeCategory={activeCategory}
+          refreshKey={refreshKey}
+        />
       </main>
+
+      <Footer />
 
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
       {registerOpen && <RegisterModal onClose={() => setRegisterOpen(false)} />}
-    
-      <Footer />
+      {uploadOpen && (
+        <UploadModal
+          onClose={() => setUploadOpen(false)}
+          onSuccess={() => setRefreshKey(k => k + 1)}
+        />
+      )}
     </>
   );
 }

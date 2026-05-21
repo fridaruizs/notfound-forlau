@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "not found",
 	description: "npclvlc archive",
+	icons: {
+    icon: "/icon_clippy_01@2x.png",
+  },
 };
 
 export default function RootLayout({
@@ -25,10 +28,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<head>
-				<link rel="icon" href="/favicon.svg" type="image/svg+xml"></link>
-			</head>
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
-		</html>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
+      </body>
+    </html>
 	);
 }

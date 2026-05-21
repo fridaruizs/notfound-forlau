@@ -3,9 +3,10 @@
 interface HeaderProps {
   onLogin: () => void;
   onRegister: () => void;
+  onUpload: () => void;
 }
 
-export default function Header({ onLogin, onRegister }: HeaderProps) {
+export default function Header({ onLogin, onRegister, onUpload }: HeaderProps) {
   return (
     <>
       <style>{`
@@ -39,9 +40,29 @@ export default function Header({ onLogin, onRegister }: HeaderProps) {
           justify-content: flex-end;
           flex-shrink: 0;
         }
+        .upload-btn {
+          background: var(--xp-btn);
+          border: 2px outset var(--xp-border-light);
+          padding: 3px 10px;
+          font-family: inherit;
+          font-size: 12px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          color: var(--xp-text);
+          font-weight: bold;
+          flex-shrink: 0;
+        }
+        .upload-btn:active { border-style: inset; }
+        .upload-btn:hover { background: var(--xp-btn-hover); }
         @media (max-width: 520px) {
           header { padding: 5px 8px; gap: 6px; }
           .header-title { font-size: 14px; }
+          .btn-label { display: none; }
+          .icon-btn { width: 30px; height: 26px; font-size: 14px; }
+          .xp-btn { padding: 3px 6px; }
+          .upload-btn { padding: 3px 6px; }
         }
         @media (max-width: 360px) {
           .header-title { font-size: 12px; }
@@ -62,6 +83,9 @@ export default function Header({ onLogin, onRegister }: HeaderProps) {
         <span className="header-title">npclvlc</span>
 
         <div className="header-right">
+          <button className="upload-btn" onClick={onUpload}>
+            📤<span className="btn-label">&nbsp;Subir</span>
+          </button>
           <button className="xp-btn" onClick={onLogin}>
             🔐<span className="btn-label">&nbsp;Iniciar sesión</span>
           </button>

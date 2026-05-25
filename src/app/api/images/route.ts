@@ -15,15 +15,9 @@ export async function POST(request: NextRequest) {
     const visibility = (formData.get("visibility") as string) || "public";
     const categoryIds = formData.getAll("category_ids") as string[];
 
-    if (!file) {
-      return NextResponse.json({ error: "File is required" }, { status: 400 });
-    }
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large. Max 10MB." }, { status: 400 });
-    }
+    if (!file) return NextResponse.json({ error: "File is required" }, { status: 400 });
+    if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
+    if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "File too large. Max 10MB." }, { status: 400 });
 
     const imageId = crypto.randomUUID();
     const ext = file.name.split(".").pop() ?? "jpg";
@@ -65,35 +59,40 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get("category_id");
+    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
+    const offset = parseInt(searchParams.get("offset") ?? "0");
 
-    let query: string;
-    const params: string[] = [];
+    const params: (string | number)[] = [];
+    let whereClause = "";
 
     if (categoryId) {
-      query = `
-        SELECT i.id, i.r2_key, i.title, i.description, i.source_url, i.visibility, i.uploaded_at,
-          GROUP_CONCAT(c.name, ',') as categories
-        FROM images i
-        INNER JOIN image_categories ic ON ic.image_id = i.id
-        LEFT JOIN image_categories ic2 ON ic2.image_id = i.id
-        LEFT JOIN categories c ON c.id = ic2.category_id
-        WHERE ic.category_id = ?
-        GROUP BY i.id
-        ORDER BY i.uploaded_at DESC
-      `;
+      whereClause = "INNER JOIN image_categories ic_filter ON ic_filter.image_id = i.id AND ic_filter.category_id = ?";
       params.push(categoryId);
-    } else {
-      query = `
-        SELECT i.id, i.r2_key, i.title, i.description, i.source_url, i.visibility, i.uploaded_at,
-          GROUP_CONCAT(c.name, ',') as categories
-        FROM images i
-        LEFT JOIN image_categories ic ON ic.image_id = i.id
-        LEFT JOIN categories c ON c.id = ic.category_id
-        GROUP BY i.id
-        ORDER BY i.uploaded_at DESC
-      `;
     }
 
+    // Get total count for hasMore
+    const countQuery = `
+      SELECT COUNT(DISTINCT i.id) as total
+      FROM images i
+      ${whereClause}
+    `;
+    const countResult = await db.prepare(countQuery).bind(...params).first() as { total: number };
+    const total = countResult?.total ?? 0;
+
+    // Get paginated images
+    const query = `
+      SELECT i.id, i.r2_key, i.title, i.description, i.source_url, i.visibility, i.uploaded_at,
+        GROUP_CONCAT(c.name, ',') as categories
+      FROM images i
+      ${whereClause}
+      LEFT JOIN image_categories ic ON ic.image_id = i.id
+      LEFT JOIN categories c ON c.id = ic.category_id
+      GROUP BY i.id
+      ORDER BY i.uploaded_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    params.push(limit, offset);
     const { results } = await db.prepare(query).bind(...params).all();
 
     const images = (results as any[]).map(img => ({
@@ -101,7 +100,15 @@ export async function GET(request: NextRequest) {
       categories: img.categories ? img.categories.split(",") : [],
     }));
 
-    return NextResponse.json({ images });
+    return NextResponse.json({
+      images,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    });
   } catch (err) {
     console.error("GET /api/images error:", err);
     return NextResponse.json({ error: "Failed to fetch images" }, { status: 500 });

@@ -21,7 +21,7 @@ export default function Bsod({ onDone }: { onDone: () => void }) {
           font-family: 'Courier New', monospace;
           font-size: 14px;
           padding: 40px 60px;
-          z-index: 9999;
+          z-index: 99999;
           transition: opacity 0.4s;
           line-height: 1.6;
         }

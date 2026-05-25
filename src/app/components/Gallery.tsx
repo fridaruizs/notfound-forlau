@@ -1,6 +1,8 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import EmptyState from "./EmptyState";
+
+const PAGE_SIZE = 20;
 
 interface ImageItem {
   id: string;
@@ -28,45 +30,139 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
+async function fetchPage(catId: string | null, offset: number) {
+  let url = `/api/images?limit=${PAGE_SIZE}&offset=${offset}`;
+  if (catId) url += `&category_id=${catId}`;
+  const res = await fetch(url);
+  return res.json() as Promise<{
+    images?: ImageItem[];
+    pagination?: { hasMore: boolean; total: number };
+    error?: string;
+  }>;
+}
+
 export default function Gallery({ activeCategory, refreshKey, shuffleKey }: GalleryProps) {
   const [images, setImages] = useState<ImageItem[]>([]);
-  const [displayed, setDisplayed] = useState<ImageItem[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<ImageItem | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const fetchImages = useCallback(async () => {
+  // Derive category id synchronously from the categories API
+  const [categoryId, setCategoryId] = useState<string | null | undefined>(
+    activeCategory === "ver todas" ? null : undefined
+  );
+
+  useEffect(() => {
+    if (activeCategory === "ver todas") {
+      setCategoryId(null);
+      return;
+    }
+    setCategoryId(undefined); // undefined = still resolving
+    fetch("/api/categories")
+      .then(r => r.json() as Promise<{ categories?: { id: string; name: string }[] }>)
+      .then(d => {
+        const cat = d.categories?.find(c => c.name === activeCategory);
+        setCategoryId(cat?.id ?? null);
+      })
+      .catch(() => setCategoryId(null));
+  }, [activeCategory]);
+
+  // Fetch first page — wait until categoryId is resolved
+  const fetchFirst = useCallback(async (catId: string | null) => {
     setLoading(true);
     setError(null);
+    setImages([]);
+    setOffset(0);
+    setHasMore(true);
+
     try {
-      let url = "/api/images";
-      if (activeCategory !== "ver todas") {
-        const catRes = await fetch("/api/categories");
-        const catData = await catRes.json() as { categories?: { id: string; name: string }[] };
-        const cat = catData.categories?.find(c => c.name === activeCategory);
-        if (cat) url += `?category_id=${cat.id}`;
-      }
-      const res = await fetch(url);
-      const data = await res.json() as { images?: ImageItem[]; error?: string };
+      const data = await fetchPage(catId, 0);
       if (data.error) throw new Error(data.error);
-      const fetched = data.images ?? [];
-      setImages(fetched);
-      setDisplayed(fetched);
+      setImages(data.images ?? []);
+      setHasMore(data.pagination?.hasMore ?? false);
+      setOffset(PAGE_SIZE);
     } catch (err) {
       setError("No se pudieron cargar las imágenes.");
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [activeCategory, refreshKey]);
+  }, []);
 
-  // Fetch when category or refresh changes
-  useEffect(() => { fetchImages(); }, [fetchImages]);
+  useEffect(() => {
+    // Don't fetch until categoryId is resolved (not undefined)
+    if (categoryId === undefined) return;
+    fetchFirst(categoryId);
+  }, [categoryId, refreshKey, fetchFirst]);
 
-  // Shuffle displayed images without refetching
+  // Load next page normally
+  const fetchMore = useCallback(async () => {
+    if (loadingMore || !hasMore || shuffling) return;
+    setLoadingMore(true);
+
+    try {
+      const data = await fetchPage(categoryId ?? null, offset);
+      if (data.error) throw new Error(data.error);
+      setImages(prev => [...prev, ...(data.images ?? [])]);
+      setHasMore(data.pagination?.hasMore ?? false);
+      setOffset(prev => prev + PAGE_SIZE);
+    } catch (err) {
+      console.error("Failed to load more:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, offset, categoryId, shuffling]);
+
+  // IntersectionObserver
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) fetchMore(); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [fetchMore]);
+
+  // Shuffle — fetch ALL remaining pages then shuffle
   useEffect(() => {
     if (shuffleKey === 0) return;
-    setDisplayed(prev => shuffleArray(prev));
+
+    async function loadAllAndShuffle() {
+      setShuffling(true);
+      setHasMore(false);
+
+      try {
+        let currentOffset = offset;
+        let moreAvailable = hasMore;
+        let allImages = [...images];
+
+        // Fetch remaining pages
+        while (moreAvailable) {
+          const data = await fetchPage(categoryId ?? null, currentOffset);
+          if (data.error) break;
+          allImages = [...allImages, ...(data.images ?? [])];
+          moreAvailable = data.pagination?.hasMore ?? false;
+          currentOffset += PAGE_SIZE;
+        }
+
+        setImages(shuffleArray(allImages));
+        setOffset(currentOffset);
+      } catch (err) {
+        console.error("Shuffle fetch error:", err);
+        setImages(prev => shuffleArray(prev));
+      } finally {
+        setShuffling(false);
+      }
+    }
+
+    loadAllAndShuffle();
   }, [shuffleKey]);
 
   if (loading) return (
@@ -81,7 +177,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
     </div>
   );
 
-  if (displayed.length === 0) return <EmptyState category={activeCategory} />;
+  if (images.length === 0) return <EmptyState category={activeCategory} />;
 
   return (
     <>
@@ -105,9 +201,8 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
           background: var(--xp-btn);
           overflow: hidden;
         }
-        .gallery-item:hover {
-          border-color: var(--xp-highlight);
-        }
+        .gallery-item:hover { border-color: var(--xp-highlight); }
+
         .gallery-img {
           display: block;
           width: 100%;
@@ -146,6 +241,15 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
           font-size: 9px;
           padding: 1px 4px;
           border: 1px solid rgba(255,255,255,0.3);
+        }
+        .gallery-sentinel {
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          color: #888;
+          padding: 10px;
         }
 
         /* Lightbox */
@@ -218,8 +322,14 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
         }
       `}</style>
 
+      {shuffling && (
+        <div style={{ textAlign: "center", padding: "8px", fontSize: "11px", color: "#666" }}>
+          Mezclando...
+        </div>
+      )}
+
       <div className="gallery-grid">
-        {displayed.map(img => (
+        {images.map(img => (
           <div
             key={img.id}
             className="gallery-item"
@@ -243,6 +353,10 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
             </div>
           </div>
         ))}
+      </div>
+
+      <div ref={sentinelRef} className="gallery-sentinel">
+        {loadingMore && "Cargando más..."}
       </div>
 
       {lightbox && (

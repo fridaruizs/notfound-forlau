@@ -18,6 +18,10 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [shuffleKey, setShuffleKey] = useState(0);
 
+  function handleRefresh() {
+    setRefreshKey(k => k + 1);
+  }
+
   return (
     <>
       {showBsod && <Bsod onDone={() => setShowBsod(false)} />}
@@ -39,6 +43,7 @@ export default function Home() {
           activeCategory={activeCategory}
           refreshKey={refreshKey}
           shuffleKey={shuffleKey}
+          onRefresh={handleRefresh}
         />
       </main>
 
@@ -49,7 +54,7 @@ export default function Home() {
       {uploadOpen && (
         <UploadModal
           onClose={() => setUploadOpen(false)}
-          onSuccess={() => setRefreshKey(k => k + 1)}
+          onSuccess={handleRefresh}
         />
       )}
     </>

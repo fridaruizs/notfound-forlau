@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import EmptyState from "./EmptyState";
+import EditImageModal from "./modals/EditImageModal";
 
 const PAGE_SIZE = 20;
 
@@ -19,6 +20,7 @@ interface GalleryProps {
   activeCategory: string;
   refreshKey: number;
   shuffleKey: number;
+  onRefresh: () => void;
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -41,7 +43,7 @@ async function fetchPage(catId: string | null, offset: number) {
   }>;
 }
 
-export default function Gallery({ activeCategory, refreshKey, shuffleKey }: GalleryProps) {
+export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefresh }: GalleryProps) {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -50,19 +52,15 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
   const [shuffling, setShuffling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<ImageItem | null>(null);
+  const [editImage, setEditImage] = useState<ImageItem | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Derive category id synchronously from the categories API
   const [categoryId, setCategoryId] = useState<string | null | undefined>(
     activeCategory === "ver todas" ? null : undefined
   );
 
   useEffect(() => {
-    if (activeCategory === "ver todas") {
-      setCategoryId(null);
-      return;
-    }
-    setCategoryId(undefined); // undefined = still resolving
+    if (activeCategory === "ver todas") { setCategoryId(null); return; }
+    setCategoryId(undefined);
     fetch("/api/categories")
       .then(r => r.json() as Promise<{ categories?: { id: string; name: string }[] }>)
       .then(d => {
@@ -72,14 +70,12 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
       .catch(() => setCategoryId(null));
   }, [activeCategory]);
 
-  // Fetch first page — wait until categoryId is resolved
   const fetchFirst = useCallback(async (catId: string | null) => {
     setLoading(true);
     setError(null);
     setImages([]);
     setOffset(0);
     setHasMore(true);
-
     try {
       const data = await fetchPage(catId, 0);
       if (data.error) throw new Error(data.error);
@@ -95,16 +91,13 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
   }, []);
 
   useEffect(() => {
-    // Don't fetch until categoryId is resolved (not undefined)
     if (categoryId === undefined) return;
     fetchFirst(categoryId);
   }, [categoryId, refreshKey, fetchFirst]);
 
-  // Load next page normally
   const fetchMore = useCallback(async () => {
     if (loadingMore || !hasMore || shuffling) return;
     setLoadingMore(true);
-
     try {
       const data = await fetchPage(categoryId ?? null, offset);
       if (data.error) throw new Error(data.error);
@@ -118,7 +111,6 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
     }
   }, [loadingMore, hasMore, offset, categoryId, shuffling]);
 
-  // IntersectionObserver
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -130,20 +122,15 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
     return () => observer.disconnect();
   }, [fetchMore]);
 
-  // Shuffle — fetch ALL remaining pages then shuffle
   useEffect(() => {
     if (shuffleKey === 0) return;
-
     async function loadAllAndShuffle() {
       setShuffling(true);
       setHasMore(false);
-
       try {
         let currentOffset = offset;
         let moreAvailable = hasMore;
         let allImages = [...images];
-
-        // Fetch remaining pages
         while (moreAvailable) {
           const data = await fetchPage(categoryId ?? null, currentOffset);
           if (data.error) break;
@@ -151,17 +138,15 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
           moreAvailable = data.pagination?.hasMore ?? false;
           currentOffset += PAGE_SIZE;
         }
-
         setImages(shuffleArray(allImages));
         setOffset(currentOffset);
       } catch (err) {
-        console.error("Shuffle fetch error:", err);
+        console.error("Shuffle error:", err);
         setImages(prev => shuffleArray(prev));
       } finally {
         setShuffling(false);
       }
     }
-
     loadAllAndShuffle();
   }, [shuffleKey]);
 
@@ -202,18 +187,10 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
           overflow: hidden;
         }
         .gallery-item:hover { border-color: var(--xp-highlight); }
-
-        .gallery-img {
-          display: block;
-          width: 100%;
-          height: auto;
-          object-fit: cover;
-        }
+        .gallery-img { display: block; width: 100%; height: auto; object-fit: cover; }
         .gallery-overlay {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
+          bottom: 0; left: 0; right: 0;
           background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
           padding: 20px 8px 6px;
           opacity: 0;
@@ -221,100 +198,63 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
         }
         .gallery-item:hover .gallery-overlay { opacity: 1; }
         .gallery-title {
-          color: white;
-          font-size: 11px;
-          font-weight: bold;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          color: white; font-size: 11px; font-weight: bold;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
           text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
         }
-        .gallery-cats {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 3px;
-          margin-top: 3px;
-        }
+        .gallery-cats { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
         .gallery-cat {
-          background: rgba(255,255,255,0.2);
-          color: white;
-          font-size: 9px;
-          padding: 1px 4px;
+          background: rgba(255,255,255,0.2); color: white;
+          font-size: 9px; padding: 1px 4px;
           border: 1px solid rgba(255,255,255,0.3);
         }
         .gallery-sentinel {
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 11px;
-          color: #888;
-          padding: 10px;
+          height: 40px; display: flex; align-items: center;
+          justify-content: center; font-size: 11px; color: #888; padding: 10px;
         }
 
         /* Lightbox */
         .lightbox-overlay {
-          position: fixed;
-          inset: 0;
+          position: fixed; inset: 0;
           background: rgba(0,0,0,0.85);
           z-index: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          display: flex; align-items: center; justify-content: center;
           padding: 16px;
         }
         .lightbox-window {
           background: var(--xp-bg);
           border: 2px outset var(--xp-border-light);
-          max-width: 90vw;
-          max-height: 90vh;
-          display: flex;
-          flex-direction: column;
+          max-width: 90vw; max-height: 90vh;
+          display: flex; flex-direction: column;
           box-shadow: 4px 4px 20px rgba(0,0,0,0.6);
         }
-        .lightbox-body {
-          display: flex;
-          overflow: hidden;
-          min-height: 0;
-        }
+        .lightbox-body { display: flex; overflow: hidden; min-height: 0; }
         .lightbox-img-wrap {
-          flex: 1;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #000;
-          min-height: 200px;
+          flex: 1; overflow: hidden;
+          display: flex; align-items: center; justify-content: center;
+          background: #000; min-height: 200px;
         }
-        .lightbox-img {
-          max-width: 100%;
-          max-height: 75vh;
-          object-fit: contain;
-          display: block;
-        }
+        .lightbox-img { max-width: 100%; max-height: 75vh; object-fit: contain; display: block; }
         .lightbox-info {
-          width: 200px;
-          flex-shrink: 0;
-          padding: 10px;
-          font-size: 11px;
+          width: 200px; flex-shrink: 0;
+          padding: 10px; font-size: 11px;
           overflow-y: auto;
           border-left: 2px inset var(--xp-border-mid);
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          display: flex; flex-direction: column; gap: 8px;
         }
         .lightbox-info-label {
-          font-weight: bold;
-          font-size: 10px;
+          font-weight: bold; font-size: 10px;
           color: var(--xp-text-muted);
-          text-transform: uppercase;
-          margin-bottom: 2px;
+          text-transform: uppercase; margin-bottom: 2px;
         }
         .lightbox-info a {
-          color: var(--xp-highlight);
-          text-decoration: underline;
-          word-break: break-all;
-          font-size: 11px;
+          color: var(--xp-highlight); text-decoration: underline;
+          word-break: break-all; font-size: 11px;
+        }
+        .lightbox-actions {
+          padding: 6px 10px;
+          border-top: 1px solid var(--xp-border-mid);
+          display: flex; gap: 4px; justify-content: flex-end;
         }
         @media (max-width: 600px) {
           .lightbox-body { flex-direction: column; }
@@ -330,11 +270,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
 
       <div className="gallery-grid">
         {images.map(img => (
-          <div
-            key={img.id}
-            className="gallery-item"
-            onClick={() => setLightbox(img)}
-          >
+          <div key={img.id} className="gallery-item" onClick={() => setLightbox(img)}>
             <img
               src={`/api/images/${img.id}`}
               alt={img.title ?? "imagen"}
@@ -359,6 +295,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
         {loadingMore && "Cargando más..."}
       </div>
 
+      {/* Lightbox */}
       {lightbox && (
         <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
           <div className="lightbox-window" onClick={e => e.stopPropagation()}>
@@ -393,10 +330,8 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "3px" }}>
                       {lightbox.categories.map(cat => (
                         <span key={cat} style={{
-                          background: "var(--xp-highlight)",
-                          color: "white",
-                          fontSize: "10px",
-                          padding: "1px 5px",
+                          background: "var(--xp-highlight)", color: "white",
+                          fontSize: "10px", padding: "1px 5px",
                         }}>{cat}</span>
                       ))}
                     </div>
@@ -416,8 +351,33 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey }: Gall
                 </div>
               </div>
             </div>
+            <div className="lightbox-actions">
+              <button
+                className="xp-btn"
+                onClick={() => { setEditImage(lightbox); setLightbox(null); }}
+              >
+                ✏️ Editar
+              </button>
+              {lightbox.source_url && (
+                <a href={lightbox.source_url} target="_blank" rel="noopener noreferrer">
+                  <button className="xp-btn">🔗 Fuente</button>
+                </a>
+              )}
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Edit modal */}
+      {editImage && (
+        <EditImageModal
+          image={editImage}
+          onClose={() => setEditImage(null)}
+          onSuccess={() => {
+            setEditImage(null);
+            onRefresh();
+          }}
+        />
       )}
     </>
   );

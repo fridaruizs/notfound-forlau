@@ -14,6 +14,7 @@ interface ImageItem {
   visibility: string;
   uploaded_at: number;
   categories: string[];
+  author: string | null;
 }
 
 interface GalleryProps {
@@ -255,6 +256,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
           padding: 6px 10px;
           border-top: 1px solid var(--xp-border-mid);
           display: flex; gap: 4px; justify-content: flex-end;
+          background: var(--xp-bg);
         }
         @media (max-width: 600px) {
           .lightbox-body { flex-direction: column; }
@@ -318,6 +320,12 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
                     <div>{lightbox.title}</div>
                   </div>
                 )}
+                {lightbox.author && (
+                  <div>
+                    <div className="lightbox-info-label">Subido por</div>
+                    <div>{lightbox.author}</div>
+                  </div>
+                )}
                 {lightbox.description && (
                   <div>
                     <div className="lightbox-info-label">Descripción</div>
@@ -368,15 +376,11 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
         </div>
       )}
 
-      {/* Edit modal */}
       {editImage && (
         <EditImageModal
           image={editImage}
           onClose={() => setEditImage(null)}
-          onSuccess={() => {
-            setEditImage(null);
-            onRefresh();
-          }}
+          onSuccess={() => { setEditImage(null); onRefresh(); }}
         />
       )}
     </>

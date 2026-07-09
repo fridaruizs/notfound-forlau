@@ -10,9 +10,10 @@ interface Category {
 interface UploadModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  authorId: string;
 }
 
-export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
+export default function UploadModal({ onClose, onSuccess, authorId }: UploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -74,6 +75,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
       if (description.trim()) formData.append("description", description.trim());
       if (sourceUrl.trim()) formData.append("source_url", sourceUrl.trim());
       formData.append("visibility", visibility);
+      formData.append("author_id", authorId);
       selectedCategories.forEach(id => formData.append("category_ids", id));
 
       setProgress(30);
@@ -103,101 +105,52 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
     <>
       <style>{`
         .upload-overlay {
-          position: fixed;
-          inset: 0;
+          position: fixed; inset: 0;
           background: rgba(0,0,0,0.25);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 500;
-          padding: 16px;
+          display: flex; align-items: center; justify-content: center;
+          z-index: 500; padding: 16px;
         }
         .upload-window {
           background: var(--xp-bg);
           border: 2px outset var(--xp-border-light);
           box-shadow: 3px 3px 10px var(--xp-shadow);
-          width: 100%;
-          max-width: 520px;
-          max-height: 90vh;
-          display: flex;
-          flex-direction: column;
+          width: 100%; max-width: 520px; max-height: 90vh;
+          display: flex; flex-direction: column;
         }
         .upload-body {
           padding: 12px 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
+          display: flex; flex-direction: column; gap: 10px;
           overflow-y: auto;
         }
-        .upload-row {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
-        .upload-row-inline {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
+        .upload-row { display: flex; flex-direction: column; gap: 3px; }
+        .upload-row-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .drop-zone {
           border: 2px inset var(--xp-border-mid);
-          background: white;
-          min-height: 120px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          position: relative;
-          overflow: hidden;
+          background: white; min-height: 120px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; position: relative; overflow: hidden;
         }
         .drop-zone:hover { background: #f8f8f8; }
-        .drop-zone img {
-          max-width: 100%;
-          max-height: 180px;
-          object-fit: contain;
-          display: block;
-        }
+        .drop-zone img { max-width: 100%; max-height: 180px; object-fit: contain; display: block; }
         .drop-zone-placeholder {
-          text-align: center;
-          color: var(--xp-text-muted);
-          font-size: 12px;
-          padding: 16px;
-          pointer-events: none;
+          text-align: center; color: var(--xp-text-muted);
+          font-size: 12px; padding: 16px; pointer-events: none;
         }
-        .drop-zone-placeholder div:first-child {
-          font-size: 28px;
-          margin-bottom: 6px;
-        }
+        .drop-zone-placeholder div:first-child { font-size: 28px; margin-bottom: 6px; }
         .category-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 4px;
-          padding: 4px;
-          border: 2px inset var(--xp-border-mid);
-          background: white;
-          min-height: 32px;
+          display: flex; flex-wrap: wrap; gap: 4px; padding: 4px;
+          border: 2px inset var(--xp-border-mid); background: white; min-height: 32px;
         }
         .chip {
-          background: var(--xp-btn);
-          border: 1px outset var(--xp-border-light);
-          padding: 2px 7px;
-          font-size: 11px;
-          cursor: pointer;
-          font-family: inherit;
-          color: var(--xp-text);
-          white-space: nowrap;
+          background: var(--xp-btn); border: 1px outset var(--xp-border-light);
+          padding: 2px 7px; font-size: 11px; cursor: pointer;
+          font-family: inherit; color: var(--xp-text); white-space: nowrap;
         }
         .chip:active { border-style: inset; }
-        .chip.selected {
-          background: var(--xp-highlight);
-          color: var(--xp-highlight-text);
-          border-color: var(--xp-highlight);
-        }
+        .chip.selected { background: var(--xp-highlight); color: var(--xp-highlight-text); border-color: var(--xp-highlight); }
         .upload-progress {
-          height: 16px;
-          background: white;
-          border: 2px inset var(--xp-border-mid);
-          overflow: hidden;
+          height: 16px; background: white;
+          border: 2px inset var(--xp-border-mid); overflow: hidden;
         }
         .upload-progress-bar {
           height: 100%;
@@ -205,30 +158,12 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           transition: width 0.3s;
         }
         .upload-footer {
-          padding: 8px 14px;
-          border-top: 1px solid var(--xp-border-mid);
-          display: flex;
-          justify-content: flex-end;
-          gap: 6px;
-          background: var(--xp-bg);
+          padding: 8px 14px; border-top: 1px solid var(--xp-border-mid);
+          display: flex; justify-content: flex-end; gap: 6px; background: var(--xp-bg);
         }
-        .upload-error {
-          color: #cc0000;
-          font-size: 11px;
-          padding: 3px 0;
-        }
-        .visibility-row {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          font-size: 12px;
-        }
-        .visibility-row label {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          cursor: pointer;
-        }
+        .upload-error { color: #cc0000; font-size: 11px; padding: 3px 0; }
+        .visibility-row { display: flex; gap: 12px; align-items: center; font-size: 12px; }
+        .visibility-row label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
         @media (max-width: 540px) {
           .upload-row-inline { grid-template-columns: 1fr; }
           .upload-window { max-width: 100%; }
@@ -237,16 +172,12 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
 
       <div className="upload-overlay" onClick={onClose}>
         <div className="upload-window" onClick={e => e.stopPropagation()}>
-
-          {/* Title bar */}
           <div className="xp-title-bar">
             <span>📤 Subir imagen</span>
             <div className="xp-close" onClick={onClose}>✕</div>
           </div>
 
           <div className="upload-body">
-
-            {/* Drop zone */}
             <div className="upload-row">
               <label className="xp-label">Archivo *</label>
               <div
@@ -261,89 +192,45 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
                     <div className="drop-zone-placeholder">
                       <div>🖼️</div>
                       <div>Hacé clic o arrastrá una imagen aquí</div>
-                      <div style={{fontSize:"10px", marginTop:"4px", opacity:0.6}}>JPG, PNG, GIF, WEBP · máx 10MB</div>
+                      <div style={{ fontSize: "10px", marginTop: "4px", opacity: 0.6 }}>JPG, PNG, GIF, WEBP · máx 10MB</div>
                     </div>
                   )
                 }
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
             </div>
 
-            {/* Title + visibility */}
             <div className="upload-row-inline">
               <div className="upload-row">
                 <label className="xp-label">Título</label>
-                <input
-                  className="xp-input"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="título de la imagen..."
-                />
+                <input className="xp-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="título de la imagen..." />
               </div>
               <div className="upload-row">
                 <label className="xp-label">Visibilidad</label>
                 <div className="visibility-row">
-                  <label>
-                    <input type="radio" name="visibility" value="public"
-                      checked={visibility === "public"}
-                      onChange={() => setVisibility("public")} />
-                    público
-                  </label>
-                  <label>
-                    <input type="radio" name="visibility" value="private"
-                      checked={visibility === "private"}
-                      onChange={() => setVisibility("private")} />
-                    privado
-                  </label>
+                  <label><input type="radio" name="visibility" value="public" checked={visibility === "public"} onChange={() => setVisibility("public")} /> público</label>
+                  <label><input type="radio" name="visibility" value="private" checked={visibility === "private"} onChange={() => setVisibility("private")} /> privado</label>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
             <div className="upload-row">
-              <label className="xp-label">Descripción <span style={{opacity:0.5}}>(opcional)</span></label>
-              <textarea
-                className="xp-textarea"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="descripción..."
-                rows={2}
-              />
+              <label className="xp-label">Descripción <span style={{ opacity: 0.5 }}>(opcional)</span></label>
+              <textarea className="xp-textarea" value={description} onChange={e => setDescription(e.target.value)} placeholder="descripción..." rows={2} />
             </div>
 
-            {/* Source URL */}
             <div className="upload-row">
-              <label className="xp-label">Fuente / link original <span style={{opacity:0.5}}>(opcional)</span></label>
-              <input
-                className="xp-input"
-                value={sourceUrl}
-                onChange={e => setSourceUrl(e.target.value)}
-                placeholder="https://..."
-                type="url"
-              />
+              <label className="xp-label">Fuente / link original <span style={{ opacity: 0.5 }}>(opcional)</span></label>
+              <input className="xp-input" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="https://..." type="url" />
             </div>
 
-            {/* Categories */}
             <div className="upload-row">
-              <label className="xp-label">
-                Categorías <span style={{opacity:0.5}}>(seleccioná una o más)</span>
-              </label>
+              <label className="xp-label">Categorías <span style={{ opacity: 0.5 }}>(seleccioná una o más)</span></label>
               <div className="category-chips">
                 {categories.length === 0
-                  ? <span style={{fontSize:"11px", color:"#888", padding:"2px 4px"}}>Cargando categorías...</span>
+                  ? <span style={{ fontSize: "11px", color: "#888", padding: "2px 4px" }}>Cargando categorías...</span>
                   : categories.map(cat => (
-                    <button
-                      key={cat.id}
-                      className={`chip${selectedCategories.includes(cat.id) ? " selected" : ""}`}
-                      onClick={() => toggleCategory(cat.id)}
-                      type="button"
-                    >
+                    <button key={cat.id} className={`chip${selectedCategories.includes(cat.id) ? " selected" : ""}`} onClick={() => toggleCategory(cat.id)} type="button">
                       {selectedCategories.includes(cat.id) ? "✓ " : ""}{cat.name}
                     </button>
                   ))
@@ -351,7 +238,6 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               </div>
             </div>
 
-            {/* Progress */}
             {uploading && (
               <div className="upload-row">
                 <div className="upload-progress">
@@ -365,12 +251,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
 
           <div className="upload-footer">
             <button className="xp-btn" onClick={onClose} disabled={uploading}>Cancelar</button>
-            <button
-              className="xp-btn"
-              onClick={handleSubmit}
-              disabled={uploading || !file}
-              style={{ fontWeight: "bold" }}
-            >
+            <button className="xp-btn" onClick={handleSubmit} disabled={uploading || !file} style={{ fontWeight: "bold" }}>
               {uploading ? "Subiendo..." : "📤 Subir"}
             </button>
           </div>

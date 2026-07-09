@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     const sourceUrl = formData.get("source_url") as string | null;
     const visibility = (formData.get("visibility") as string) || "public";
     const categoryIds = formData.getAll("category_ids") as string[];
+    const authorId = formData.get("author_id") as string | null;
 
     if (!file) return NextResponse.json({ error: "File is required" }, { status: 400 });
     if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
@@ -30,15 +31,23 @@ export async function POST(request: NextRequest) {
 
     await db
       .prepare(`
-        INSERT INTO images (id, r2_key, title, description, source_url, visibility, uploaded_at)
-        VALUES (?, ?, ?, ?, ?, ?, unixepoch())
+        INSERT INTO images (id, r2_key, title, description, source_url, visibility, author_id, uploaded_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())
       `)
-      .bind(imageId, r2Key, title || null, description || null, sourceUrl || null, visibility)
+      .bind(imageId, r2Key, title || null, description || null, sourceUrl || null, visibility, authorId || null)
       .run();
 
-    if (categoryIds.length > 0) {
-      const placeholders = categoryIds.map(() => "(?, ?)").join(", ");
-      const values = categoryIds.flatMap(catId => [imageId, catId]);
+    let finalCategoryIds = categoryIds;
+    if (finalCategoryIds.length === 0) {
+      const sinCategoria = await db
+        .prepare(`SELECT id FROM categories WHERE name = 'sin categoría' AND "protected" = 1`)
+        .first() as { id: string } | null;
+      if (sinCategoria) finalCategoryIds = [sinCategoria.id];
+    }
+
+    if (finalCategoryIds.length > 0) {
+      const placeholders = finalCategoryIds.map(() => "(?, ?)").join(", ");
+      const values = finalCategoryIds.flatMap(catId => [imageId, catId]);
       await db
         .prepare(`INSERT OR IGNORE INTO image_categories (image_id, category_id) VALUES ${placeholders}`)
         .bind(...values)
@@ -70,7 +79,6 @@ export async function GET(request: NextRequest) {
       params.push(categoryId);
     }
 
-    // Get total count for hasMore
     const countQuery = `
       SELECT COUNT(DISTINCT i.id) as total
       FROM images i
@@ -79,14 +87,15 @@ export async function GET(request: NextRequest) {
     const countResult = await db.prepare(countQuery).bind(...params).first() as { total: number };
     const total = countResult?.total ?? 0;
 
-    // Get paginated images
     const query = `
       SELECT i.id, i.r2_key, i.title, i.description, i.source_url, i.visibility, i.uploaded_at,
-        GROUP_CONCAT(c.name, ',') as categories
+        GROUP_CONCAT(DISTINCT c.name) as categories,
+        COALESCE(u.display_name, u.username) as author
       FROM images i
       ${whereClause}
       LEFT JOIN image_categories ic ON ic.image_id = i.id
       LEFT JOIN categories c ON c.id = ic.category_id
+      LEFT JOIN users u ON u.id = i.author_id
       GROUP BY i.id
       ORDER BY i.uploaded_at DESC
       LIMIT ? OFFSET ?
@@ -98,6 +107,7 @@ export async function GET(request: NextRequest) {
     const images = (results as any[]).map(img => ({
       ...img,
       categories: img.categories ? img.categories.split(",") : [],
+      author: img.author ?? null,
     }));
 
     return NextResponse.json({

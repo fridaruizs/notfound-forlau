@@ -1,13 +1,25 @@
 "use client";
+import { useRouter } from "next/navigation";
+
+interface User {
+  id: string;
+  username: string;
+  role: string;
+}
 
 interface HeaderProps {
   onLogin: () => void;
   onRegister: () => void;
   onUpload: () => void;
   onShuffle: () => void;
+  onLogout: () => void;
+  user: User | null;
 }
 
-export default function Header({ onLogin, onRegister, onUpload, onShuffle }: HeaderProps) {
+export default function Header({ onLogin, onRegister, onUpload, onShuffle, onLogout, user }: HeaderProps) {
+  const router = useRouter();
+  const isAdmin = user?.role === "admin";
+
   return (
     <>
       <style>{`
@@ -57,6 +69,23 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle }: Hea
         }
         .upload-btn:active { border-style: inset; }
         .upload-btn:hover { background: var(--xp-btn-hover); }
+
+        .user-chip {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(0,0,0,0.15);
+          border: 1px solid rgba(255,255,255,0.2);
+          padding: 3px 10px;
+          cursor: pointer;
+          font-size: 12px;
+          color: white;
+          text-shadow: 1px 1px 0 #000;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .user-chip:hover { background: rgba(0,0,0,0.25); }
+
         @media (max-width: 520px) {
           header { padding: 5px 8px; gap: 6px; }
           .header-title { font-size: 14px; }
@@ -64,6 +93,7 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle }: Hea
           .icon-btn { width: 30px; height: 26px; font-size: 14px; }
           .xp-btn { padding: 3px 6px; }
           .upload-btn { padding: 3px 6px; }
+          .user-chip { padding: 3px 6px; }
         }
         @media (max-width: 360px) {
           .header-title { font-size: 12px; }
@@ -77,18 +107,30 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle }: Hea
         <span className="header-title">npclvlc</span>
 
         <div className="header-right">
-          <button className="upload-btn" onClick={onUpload}>
-            📤<span className="btn-label">&nbsp;Subir</span>
-          </button>
-          <button className="xp-btn" onClick={onLogin}>
-            🔐<span className="btn-label">&nbsp;Iniciar sesión</span>
-          </button>
-          <button className="xp-btn" onClick={onRegister}>
-            📝<span className="btn-label">&nbsp;Registrarse</span>
-          </button>
-          <button className="xp-btn">
-            👤<span className="btn-label">&nbsp;Mi perfil</span>
-          </button>
+          {user ? (
+            <>
+              {isAdmin && (
+                <button className="upload-btn" onClick={onUpload}>
+                  📤<span className="btn-label">&nbsp;Subir</span>
+                </button>
+              )}
+              <button className="user-chip" onClick={() => router.push("/profile")}>
+                👤 {user.username}
+              </button>
+              <button className="xp-btn" onClick={onLogout}>
+                <span className="btn-label">Salir</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="xp-btn" onClick={onLogin}>
+                🔐<span className="btn-label">&nbsp;Iniciar sesión</span>
+              </button>
+              <button className="xp-btn" onClick={onRegister}>
+                📝<span className="btn-label">&nbsp;Registrarse</span>
+              </button>
+            </>
+          )}
         </div>
       </header>
     </>

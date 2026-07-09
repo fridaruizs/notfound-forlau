@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import EmptyState from "./EmptyState";
 import EditImageModal from "./modals/EditImageModal";
+import { useLang } from "@/app/lib/LangContext";
+import { translateCategory } from "@/app/lib/translations";
 
 const PAGE_SIZE = 20;
 
@@ -45,6 +47,7 @@ async function fetchPage(catId: string | null, offset: number) {
 }
 
 export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefresh }: GalleryProps) {
+  const { lang, t } = useLang();
   const [images, setImages] = useState<ImageItem[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -56,11 +59,11 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
   const [editImage, setEditImage] = useState<ImageItem | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [categoryId, setCategoryId] = useState<string | null | undefined>(
-    activeCategory === "ver todas" ? null : undefined
+    activeCategory === "ver todas" || activeCategory === "veure totes" ? null : undefined
   );
 
   useEffect(() => {
-    if (activeCategory === "ver todas") { setCategoryId(null); return; }
+    if (activeCategory === "ver todas" || activeCategory === "veure totes") { setCategoryId(null); return; }
     setCategoryId(undefined);
     fetch("/api/categories")
       .then(r => r.json() as Promise<{ categories?: { id: string; name: string }[] }>)
@@ -84,12 +87,12 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
       setHasMore(data.pagination?.hasMore ?? false);
       setOffset(PAGE_SIZE);
     } catch (err) {
-      setError("No se pudieron cargar las imágenes.");
+      setError(t("errorLoad"));
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (categoryId === undefined) return;
@@ -106,7 +109,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
       setHasMore(data.pagination?.hasMore ?? false);
       setOffset(prev => prev + PAGE_SIZE);
     } catch (err) {
-      console.error("Failed to load more:", err);
+      console.error(err);
     } finally {
       setLoadingMore(false);
     }
@@ -142,7 +145,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
         setImages(shuffleArray(allImages));
         setOffset(currentOffset);
       } catch (err) {
-        console.error("Shuffle error:", err);
+        console.error(err);
         setImages(prev => shuffleArray(prev));
       } finally {
         setShuffling(false);
@@ -153,7 +156,7 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
 
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", padding: "60px", fontSize: "12px", color: "#666" }}>
-      Cargando...
+      {t("loading")}
     </div>
   );
 
@@ -168,123 +171,46 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
   return (
     <>
       <style>{`
-        .gallery-grid {
-          column-count: 3;
-          column-gap: 8px;
-          padding: 10px;
-        }
+        .gallery-grid { column-count: 3; column-gap: 8px; padding: 10px; }
         @media (max-width: 900px) { .gallery-grid { column-count: 2; } }
         @media (max-width: 540px) { .gallery-grid { column-count: 1; } }
-
-        .gallery-item {
-          break-inside: avoid;
-          margin-bottom: 8px;
-          position: relative;
-          cursor: pointer;
-          border: 2px solid var(--xp-border-mid);
-          border-right-color: var(--xp-border-light);
-          border-bottom-color: var(--xp-border-light);
-          background: var(--xp-btn);
-          overflow: hidden;
-        }
+        .gallery-item { break-inside: avoid; margin-bottom: 8px; position: relative; cursor: pointer; border: 2px solid var(--xp-border-mid); border-right-color: var(--xp-border-light); border-bottom-color: var(--xp-border-light); background: var(--xp-btn); overflow: hidden; }
         .gallery-item:hover { border-color: var(--xp-highlight); }
         .gallery-img { display: block; width: 100%; height: auto; object-fit: cover; }
-        .gallery-overlay {
-          position: absolute;
-          bottom: 0; left: 0; right: 0;
-          background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
-          padding: 20px 8px 6px;
-          opacity: 0;
-          transition: opacity 0.15s;
-        }
+        .gallery-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%); padding: 20px 8px 6px; opacity: 0; transition: opacity 0.15s; }
         .gallery-item:hover .gallery-overlay { opacity: 1; }
-        .gallery-title {
-          color: white; font-size: 11px; font-weight: bold;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-          text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
-        }
+        .gallery-title { color: white; font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
         .gallery-cats { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
-        .gallery-cat {
-          background: rgba(255,255,255,0.2); color: white;
-          font-size: 9px; padding: 1px 4px;
-          border: 1px solid rgba(255,255,255,0.3);
-        }
-        .gallery-sentinel {
-          height: 40px; display: flex; align-items: center;
-          justify-content: center; font-size: 11px; color: #888; padding: 10px;
-        }
-
-        /* Lightbox */
-        .lightbox-overlay {
-          position: fixed; inset: 0;
-          background: rgba(0,0,0,0.85);
-          z-index: 600;
-          display: flex; align-items: center; justify-content: center;
-          padding: 16px;
-        }
-        .lightbox-window {
-          background: var(--xp-bg);
-          border: 2px outset var(--xp-border-light);
-          max-width: 90vw; max-height: 90vh;
-          display: flex; flex-direction: column;
-          box-shadow: 4px 4px 20px rgba(0,0,0,0.6);
-        }
+        .gallery-cat { background: rgba(255,255,255,0.2); color: white; font-size: 9px; padding: 1px 4px; border: 1px solid rgba(255,255,255,0.3); }
+        .gallery-sentinel { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #888; padding: 10px; }
+        .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 600; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .lightbox-window { background: var(--xp-bg); border: 2px outset var(--xp-border-light); max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 4px 4px 20px rgba(0,0,0,0.6); }
         .lightbox-body { display: flex; overflow: hidden; min-height: 0; }
-        .lightbox-img-wrap {
-          flex: 1; overflow: hidden;
-          display: flex; align-items: center; justify-content: center;
-          background: #000; min-height: 200px;
-        }
+        .lightbox-img-wrap { flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; min-height: 200px; }
         .lightbox-img { max-width: 100%; max-height: 75vh; object-fit: contain; display: block; }
-        .lightbox-info {
-          width: 200px; flex-shrink: 0;
-          padding: 10px; font-size: 11px;
-          overflow-y: auto;
-          border-left: 2px inset var(--xp-border-mid);
-          display: flex; flex-direction: column; gap: 8px;
-        }
-        .lightbox-info-label {
-          font-weight: bold; font-size: 10px;
-          color: var(--xp-text-muted);
-          text-transform: uppercase; margin-bottom: 2px;
-        }
-        .lightbox-info a {
-          color: var(--xp-highlight); text-decoration: underline;
-          word-break: break-all; font-size: 11px;
-        }
-        .lightbox-actions {
-          padding: 6px 10px;
-          border-top: 1px solid var(--xp-border-mid);
-          display: flex; gap: 4px; justify-content: flex-end;
-          background: var(--xp-bg);
-        }
-        @media (max-width: 600px) {
-          .lightbox-body { flex-direction: column; }
-          .lightbox-info { width: 100%; border-left: none; border-top: 2px inset var(--xp-border-mid); }
-        }
+        .lightbox-info { width: 200px; flex-shrink: 0; padding: 10px; font-size: 11px; overflow-y: auto; border-left: 2px inset var(--xp-border-mid); display: flex; flex-direction: column; gap: 8px; }
+        .lightbox-info-label { font-weight: bold; font-size: 10px; color: var(--xp-text-muted); text-transform: uppercase; margin-bottom: 2px; }
+        .lightbox-info a { color: var(--xp-highlight); text-decoration: underline; word-break: break-all; font-size: 11px; }
+        .lightbox-actions { padding: 6px 10px; border-top: 1px solid var(--xp-border-mid); display: flex; gap: 4px; justify-content: flex-end; background: var(--xp-bg); }
+        @media (max-width: 600px) { .lightbox-body { flex-direction: column; } .lightbox-info { width: 100%; border-left: none; border-top: 2px inset var(--xp-border-mid); } }
       `}</style>
 
       {shuffling && (
         <div style={{ textAlign: "center", padding: "8px", fontSize: "11px", color: "#666" }}>
-          Mezclando...
+          {t("shuffling")}
         </div>
       )}
 
       <div className="gallery-grid">
         {images.map(img => (
           <div key={img.id} className="gallery-item" onClick={() => setLightbox(img)}>
-            <img
-              src={`/api/images/${img.id}`}
-              alt={img.title ?? "imagen"}
-              className="gallery-img"
-              loading="lazy"
-            />
+            <img src={`/api/images/${img.id}`} alt={img.title ?? "imagen"} className="gallery-img" loading="lazy" />
             <div className="gallery-overlay">
               {img.title && <div className="gallery-title">{img.title}</div>}
               {img.categories.length > 0 && (
                 <div className="gallery-cats">
                   {img.categories.map(cat => (
-                    <span key={cat} className="gallery-cat">{cat}</span>
+                    <span key={cat} className="gallery-cat">{translateCategory(cat, lang)}</span>
                   ))}
                 </div>
               )}
@@ -294,10 +220,9 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
       </div>
 
       <div ref={sentinelRef} className="gallery-sentinel">
-        {loadingMore && "Cargando más..."}
+        {loadingMore && t("loadingMore")}
       </div>
 
-      {/* Lightbox */}
       {lightbox && (
         <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
           <div className="lightbox-window" onClick={e => e.stopPropagation()}>
@@ -307,68 +232,43 @@ export default function Gallery({ activeCategory, refreshKey, shuffleKey, onRefr
             </div>
             <div className="lightbox-body">
               <div className="lightbox-img-wrap">
-                <img
-                  src={`/api/images/${lightbox.id}`}
-                  alt={lightbox.title ?? "imagen"}
-                  className="lightbox-img"
-                />
+                <img src={`/api/images/${lightbox.id}`} alt={lightbox.title ?? "imagen"} className="lightbox-img" />
               </div>
               <div className="lightbox-info">
-                {lightbox.title && (
-                  <div>
-                    <div className="lightbox-info-label">Título</div>
-                    <div>{lightbox.title}</div>
-                  </div>
-                )}
-                {lightbox.author && (
-                  <div>
-                    <div className="lightbox-info-label">Subido por</div>
-                    <div>{lightbox.author}</div>
-                  </div>
-                )}
-                {lightbox.description && (
-                  <div>
-                    <div className="lightbox-info-label">Descripción</div>
-                    <div>{lightbox.description}</div>
-                  </div>
-                )}
+                {lightbox.title && <div><div className="lightbox-info-label">{t("title")}</div><div>{lightbox.title}</div></div>}
+                {lightbox.author && <div><div className="lightbox-info-label">{t("uploadedBy")}</div><div>{lightbox.author}</div></div>}
+                {lightbox.description && <div><div className="lightbox-info-label">{t("description")}</div><div>{lightbox.description}</div></div>}
                 {lightbox.categories.length > 0 && (
                   <div>
-                    <div className="lightbox-info-label">Categorías</div>
+                    <div className="lightbox-info-label">{t("categories")}</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "3px" }}>
                       {lightbox.categories.map(cat => (
-                        <span key={cat} style={{
-                          background: "var(--xp-highlight)", color: "white",
-                          fontSize: "10px", padding: "1px 5px",
-                        }}>{cat}</span>
+                        <span key={cat} style={{ background: "var(--xp-highlight)", color: "white", fontSize: "10px", padding: "1px 5px" }}>
+                          {translateCategory(cat, lang)}
+                        </span>
                       ))}
                     </div>
                   </div>
                 )}
                 {lightbox.source_url && (
                   <div>
-                    <div className="lightbox-info-label">Fuente</div>
-                    <a href={lightbox.source_url} target="_blank" rel="noopener noreferrer">
-                      {lightbox.source_url}
-                    </a>
+                    <div className="lightbox-info-label">{t("source")}</div>
+                    <a href={lightbox.source_url} target="_blank" rel="noopener noreferrer">{lightbox.source_url}</a>
                   </div>
                 )}
                 <div>
-                  <div className="lightbox-info-label">Subido</div>
-                  <div>{new Date(lightbox.uploaded_at * 1000).toLocaleDateString("es-AR")}</div>
+                  <div className="lightbox-info-label">{t("uploadedAt")}</div>
+                  <div>{new Date(lightbox.uploaded_at * 1000).toLocaleDateString(lang === "ca" ? "ca-ES" : "es-AR")}</div>
                 </div>
               </div>
             </div>
             <div className="lightbox-actions">
-              <button
-                className="xp-btn"
-                onClick={() => { setEditImage(lightbox); setLightbox(null); }}
-              >
-                ✏️ Editar
+              <button className="xp-btn" onClick={() => { setEditImage(lightbox); setLightbox(null); }}>
+                ✏️ {t("edit")}
               </button>
               {lightbox.source_url && (
                 <a href={lightbox.source_url} target="_blank" rel="noopener noreferrer">
-                  <button className="xp-btn">🔗 Fuente</button>
+                  <button className="xp-btn">🔗 {t("source")}</button>
                 </a>
               )}
             </div>

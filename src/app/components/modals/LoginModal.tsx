@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useLang } from "@/app/lib/LangContext";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -7,13 +8,14 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
+  const { t } = useLang();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!username.trim() || !password) { setError("Completá todos los campos."); return; }
+    if (!username.trim() || !password) { setError(t("loginFill")); return; }
     setLoading(true);
     setError(null);
     try {
@@ -23,11 +25,11 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
         body: JSON.stringify({ username: username.trim(), password }),
       });
       const data = await res.json() as { user?: { id: string; username: string; role: string }; error?: string };
-      if (!res.ok) { setError(data.error ?? "Error al iniciar sesión."); return; }
+      if (!res.ok) { setError(data.error ?? t("loginError")); return; }
       onSuccess(data.user!);
       onClose();
     } catch {
-      setError("Error de conexión.");
+      setError(t("loginError"));
     } finally {
       setLoading(false);
     }
@@ -37,36 +39,27 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="xp-window" style={{ width: "100%", maxWidth: "300px" }} onClick={e => e.stopPropagation()}>
         <div className="xp-title-bar">
-          <span>🔐 Inicio de Sesión</span>
+          <span>🔐 {t("loginTitle")}</span>
           <div className="xp-close" onClick={onClose}>✕</div>
         </div>
         <div className="xp-form">
           <div>
-            <label className="xp-label">Usuario o email:</label>
-            <input
-              className="xp-input"
-              type="text"
-              value={username}
+            <label className="xp-label">{t("loginUser")}</label>
+            <input className="xp-input" type="text" value={username}
               onChange={e => setUsername(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()}
-              autoFocus
-            />
+              onKeyDown={e => e.key === "Enter" && handleLogin()} autoFocus />
           </div>
           <div>
-            <label className="xp-label">Contraseña:</label>
-            <input
-              className="xp-input"
-              type="password"
-              value={password}
+            <label className="xp-label">{t("loginPass")}</label>
+            <input className="xp-input" type="password" value={password}
               onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()}
-            />
+              onKeyDown={e => e.key === "Enter" && handleLogin()} />
           </div>
           {error && <div style={{ color: "#cc0000", fontSize: "11px" }}>⚠️ {error}</div>}
           <div className="xp-form-btns">
-            <button className="xp-btn" onClick={onClose} disabled={loading}>Cancelar</button>
+            <button className="xp-btn" onClick={onClose} disabled={loading}>{t("loginCancel")}</button>
             <button className="xp-btn" onClick={handleLogin} disabled={loading} style={{ fontWeight: "bold" }}>
-              {loading ? "..." : "Entrar"}
+              {loading ? "..." : t("loginSubmit")}
             </button>
           </div>
         </div>

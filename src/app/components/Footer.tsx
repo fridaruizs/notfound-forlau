@@ -1,4 +1,13 @@
+"use client";
+import { useLang } from "@/app/lib/LangContext";
+
 export default function Footer() {
+  const { lang } = useLang();
+
+  const text = lang === "ca"
+    ? "© 2026 fet amb ❤︎ per"
+    : "© 2026 hecho con ❤︎ por";
+
   return (
     <>
       <style>{`
@@ -16,14 +25,12 @@ export default function Footer() {
           color: #a8d4ff;
           text-decoration: none;
         }
-        .xp-footer a:hover {
-          text-decoration: underline;
-        }
+        .xp-footer a:hover { text-decoration: underline; }
       `}</style>
       <footer className="xp-footer">
-        © 2026 made with ❤︎ by{" "}
+        {text}{" "}
         <a href="https://github.com/fridaruizs" target="_blank" rel="noopener noreferrer">
-          frida ruiz
+          frida
         </a>
       </footer>
     </>

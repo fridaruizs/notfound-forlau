@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useLang } from "../lib/LangContext";
 
 interface User {
   id: string;
@@ -18,6 +19,7 @@ interface HeaderProps {
 
 export default function Header({ onLogin, onRegister, onUpload, onShuffle, onLogout, user }: HeaderProps) {
   const router = useRouter();
+  const { t } = useLang();
   const isAdmin = user?.role === "admin";
 
   return (
@@ -36,56 +38,30 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle, onLog
         }
         .header-left { display: flex; gap: 4px; flex-shrink: 0; }
         .header-title {
-          font-weight: bold;
-          font-size: 16px;
-          letter-spacing: 1px;
-          color: var(--xp-highlight-text);
-          text-shadow: 1px 1px 0 #000;
-          text-align: center;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          font-weight: bold; font-size: 16px; letter-spacing: 1px;
+          color: var(--xp-highlight-text); text-shadow: 1px 1px 0 #000;
+          text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .header-right {
-          display: flex;
-          gap: 4px;
-          align-items: center;
-          justify-content: flex-end;
-          flex-shrink: 0;
+          display: flex; gap: 4px; align-items: center;
+          justify-content: flex-end; flex-shrink: 0;
         }
         .upload-btn {
-          background: var(--xp-btn);
-          border: 2px outset var(--xp-border-light);
-          padding: 3px 10px;
-          font-family: inherit;
-          font-size: 12px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          color: var(--xp-text);
-          font-weight: bold;
-          flex-shrink: 0;
+          background: var(--xp-btn); border: 2px outset var(--xp-border-light);
+          padding: 3px 10px; font-family: inherit; font-size: 12px; cursor: pointer;
+          display: flex; align-items: center; gap: 4px;
+          color: var(--xp-text); font-weight: bold; flex-shrink: 0;
         }
         .upload-btn:active { border-style: inset; }
         .upload-btn:hover { background: var(--xp-btn-hover); }
-
         .user-chip {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          background: rgba(0,0,0,0.15);
-          border: 1px solid rgba(255,255,255,0.2);
-          padding: 3px 10px;
-          cursor: pointer;
-          font-size: 12px;
-          color: white;
-          text-shadow: 1px 1px 0 #000;
-          font-family: inherit;
-          white-space: nowrap;
+          display: flex; align-items: center; gap: 5px;
+          background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.2);
+          padding: 3px 10px; cursor: pointer; font-size: 12px;
+          color: white; text-shadow: 1px 1px 0 #000;
+          font-family: inherit; white-space: nowrap;
         }
         .user-chip:hover { background: rgba(0,0,0,0.25); }
-
         @media (max-width: 520px) {
           header { padding: 5px 8px; gap: 6px; }
           .header-title { font-size: 14px; }
@@ -95,13 +71,11 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle, onLog
           .upload-btn { padding: 3px 6px; }
           .user-chip { padding: 3px 6px; }
         }
-        @media (max-width: 360px) {
-          .header-title { font-size: 12px; }
-        }
+        @media (max-width: 360px) { .header-title { font-size: 12px; } }
       `}</style>
       <header>
         <div className="header-left">
-          <button className="icon-btn" title="Orden aleatorio" onClick={onShuffle}>⇄</button>
+          <button className="icon-btn" title={t("shuffle")} onClick={onShuffle}>⇄</button>
         </div>
 
         <span className="header-title">npclvlc</span>
@@ -111,23 +85,23 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle, onLog
             <>
               {isAdmin && (
                 <button className="upload-btn" onClick={onUpload}>
-                  📤<span className="btn-label">&nbsp;Subir</span>
+                  📤<span className="btn-label">&nbsp;{t("upload")}</span>
                 </button>
               )}
               <button className="user-chip" onClick={() => router.push("/profile")}>
                 👤 {user.username}
               </button>
               <button className="xp-btn" onClick={onLogout}>
-                <span className="btn-label">Salir</span>
+                <span className="btn-label">{t("logout")}</span>
               </button>
             </>
           ) : (
             <>
               <button className="xp-btn" onClick={onLogin}>
-                🔐<span className="btn-label">&nbsp;Iniciar sesión</span>
+                🔐<span className="btn-label">&nbsp;{t("login")}</span>
               </button>
               <button className="xp-btn" onClick={onRegister}>
-                📝<span className="btn-label">&nbsp;Registrarse</span>
+                📝<span className="btn-label">&nbsp;{t("register")}</span>
               </button>
             </>
           )}

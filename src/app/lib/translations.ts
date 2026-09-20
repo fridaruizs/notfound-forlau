@@ -104,6 +104,36 @@ export const translations = {
     profileSuccess: "✓ Perfil actualizado.",
     profileTopCats: "Categorías más usadas",
 
+    // Backlog / admin panel
+    backlogTitle: "Backlog del proyecto",
+    backlogPending: "pendientes",
+    backlogNote: "te odio pero todavía hay cosas por hacer, para consultas, pedidos o quejas consultar a: fridaruizsh@gmail.com",
+    backlogGoToNotes: "📌 Ir al tablón de notas",
+    backlogItems: [
+      "Optimización de galería / paginación",
+      "Mejoras de vista galería en mobile",
+      "Panel admin — ver usuarios, cambiar roles desde UI",
+      "Fuente japonesa + traducción",
+      "Banners publicitarios estilo 2000s en la galería",
+      "Búsqueda por similitud / vibe (LLM, estilo Pinterest)",
+      "Búsqueda inversa de imagen / lector de metadata",
+      "Dominio personalizado",
+      "Revisión legal — copyright antes de hacer público",
+      "Separar portfolio de Lau (home) + CV + /notfound archive",
+    ],
+
+    // Notes board
+    notesTitle: "Tablón de notas",
+    notesBack: "← Volver al perfil",
+    notesPlaceholder: "Escribí una nota...",
+    notesPublish: "📌 Publicar",
+    notesLoading: "Cargando notas...",
+    notesEmpty: "No hay notas todavía. ¡Dejá la primera!",
+    notesErrorLoad: "Error al cargar notas.",
+    notesErrorPost: "Error al publicar nota.",
+    notesErrorDelete: "Error al eliminar.",
+    notesFileLabel: "📝 nota.txt",
+
     // Category CRUD
     catRename: "Renombrar",
     catDelete: "Eliminar",
@@ -238,6 +268,36 @@ export const translations = {
     profileCancel: "Cancel·lar",
     profileSuccess: "✓ Perfil actualitzat.",
     profileTopCats: "Categories més usades",
+
+    // Backlog / admin panel
+    backlogTitle: "Backlog del projecte",
+    backlogPending: "pendents",
+    backlogNote: "t'odio però encara hi ha coses per fer, per consultes, peticions o queixes consultar a: fridaruizsh@gmail.com",
+    backlogGoToNotes: "📌 Anar al tauler de notes",
+    backlogItems: [
+      "Optimització de galeria / paginació",
+      "Millores de vista galeria en mòbil",
+      "Panell admin — veure usuaris, canviar rols des de la UI",
+      "Font japonesa + traducció",
+      "Banners publicitaris estil anys 2000 a la galeria",
+      "Cerca per similitud / vibe (LLM, estil Pinterest)",
+      "Cerca inversa d'imatge / lector de metadades",
+      "Domini personalitzat",
+      "Revisió legal — copyright abans de fer-ho públic",
+      "Separar portfolio d'en Lau (home) + CV + /notfound archive",
+    ],
+
+    // Notes board
+    notesTitle: "Tauler de notes",
+    notesBack: "← Tornar al perfil",
+    notesPlaceholder: "Escriu una nota...",
+    notesPublish: "📌 Publicar",
+    notesLoading: "Carregant notes...",
+    notesEmpty: "Encara no hi ha notes. Deixa la primera!",
+    notesErrorLoad: "Error en carregar notes.",
+    notesErrorPost: "Error en publicar la nota.",
+    notesErrorDelete: "Error en eliminar.",
+    notesFileLabel: "📝 nota.txt",
 
     // Category CRUD
     catRename: "Reanomenar",

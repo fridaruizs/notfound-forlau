@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useLang } from "@/app/lib/LangContext";
+import { useLang } from "../lib/LangContext";
+import { translations } from "../lib/translations";
 
 interface UserProfile {
   id: string;
@@ -22,6 +23,7 @@ interface TopCategory {
 export default function ProfilePage() {
   const router = useRouter();
   const { lang, t } = useLang();
+  const backlogItems = translations[lang].backlogItems;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [topCategories, setTopCategories] = useState<TopCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +89,7 @@ export default function ProfilePage() {
     lang === "ca" ? "ca-ES" : "es-AR",
     { year: "numeric", month: "long", day: "numeric" }
   );
+  const isAdmin = profile.role === "admin";
 
   return (
     <>
@@ -122,6 +125,37 @@ export default function ProfilePage() {
         .cat-bar-track { width: 80px; height: 10px; background: #C0C0C0; border: 1px inset #808080; overflow: hidden; flex-shrink: 0; }
         .cat-bar-fill { height: 100%; background: linear-gradient(to right, #000080, #1084d0); }
         .cat-bar-count { font-size: 10px; background: #000080; color: white; padding: 1px 5px; flex-shrink: 0; min-width: 28px; text-align: center; }
+
+        .backlog-list {
+          list-style: none;
+          padding: 10px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .backlog-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          font-size: 12px;
+          padding: 4px 6px;
+          border-bottom: 1px solid #C0C0C0;
+        }
+        .backlog-item:last-child { border-bottom: none; }
+        .backlog-checkbox {
+          width: 13px;
+          height: 13px;
+          border: 2px inset #808080;
+          background: white;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+        .backlog-text { flex: 1; line-height: 1.4; }
+        .backlog-count {
+          font-size: 10px;
+          color: #555;
+          font-weight: normal;
+        }
       `}</style>
 
       <div className="profile-header">
@@ -142,7 +176,7 @@ export default function ProfilePage() {
               <span className="profile-info-label">{t("profileUsername")}</span>
               <span className="profile-info-value">
                 @{profile.username}
-                {profile.role === "admin" && <span className="role-badge">admin</span>}
+                {isAdmin && <span className="role-badge">admin</span>}
               </span>
             </div>
             <div className="profile-info-row">
@@ -222,6 +256,32 @@ export default function ProfilePage() {
                   <span className="cat-bar-count">{cat.count}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Backlog — admin only */}
+        {isAdmin && (
+          <div className="xp-window">
+            <div className="xp-title-bar">
+              <span>📋 {t("backlogTitle")}</span>
+              <span className="backlog-count">{backlogItems.length} {t("backlogPending")}</span>
+            </div>
+            <div style={{ padding: "8px 14px 0", fontSize: "11px", color: "#555", fontStyle: "italic" }}>
+              {t("backlogNote")}
+            </div>
+            <ul className="backlog-list">
+              {backlogItems.map((item, i) => (
+                <li key={i} className="backlog-item">
+                  <span className="backlog-checkbox" />
+                  <span className="backlog-text">{item}</span>
+                </li>
+              ))}
+            </ul>
+            <div style={{ padding: "0 14px 14px" }}>
+              <button className="xp-btn" onClick={() => router.push("/notes")} style={{ width: "100%" }}>
+                {t("backlogGoToNotes")}
+              </button>
             </div>
           </div>
         )}

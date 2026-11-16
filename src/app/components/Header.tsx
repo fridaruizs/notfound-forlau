@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useLang } from "../lib/LangContext";
+import NotificationBell from "./NotificationBell";
 
 interface User {
   id: string;
@@ -83,6 +84,7 @@ export default function Header({ onLogin, onRegister, onUpload, onShuffle, onLog
         <div className="header-right">
           {user ? (
             <>
+              {isAdmin && <NotificationBell />}
               {isAdmin && (
                 <button className="upload-btn" onClick={onUpload}>
                   📤<span className="btn-label">&nbsp;{t("upload")}</span>

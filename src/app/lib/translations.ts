@@ -10,6 +10,15 @@ export const translations = {
     logout: "Salir",
     profile: "Mi perfil",
 
+    // Notification bell (admins)
+    notifTitle: "Notificaciones",
+    notifEmpty: "No hay notas nuevas.",
+    notifNewNote: "dejó una nota nueva",
+    notifGoToBoard: "📌 Ver tablón",
+    notifMarkRead: "Marcar como leídas",
+    notifError: "No se pudieron cargar las notificaciones.",
+    notifSomeone: "Alguien",
+
     // Category bar
     verTodas: "ver todas",
     newCategory: "nueva categoría...",
@@ -174,6 +183,15 @@ export const translations = {
     register: "Registrar-se",
     logout: "Sortir",
     profile: "El meu perfil",
+
+    // Notification bell (admins)
+    notifTitle: "Notificacions",
+    notifEmpty: "No hi ha notes noves.",
+    notifNewNote: "ha deixat una nota nova",
+    notifGoToBoard: "📌 Veure el tauler",
+    notifMarkRead: "Marcar com a llegides",
+    notifError: "No s'han pogut carregar les notificacions.",
+    notifSomeone: "Algú",
 
     // Category bar
     verTodas: "veure totes",

@@ -53,6 +53,8 @@ export default function NotesPage() {
   useEffect(() => {
     if (!user) return;
     fetchNotes();
+    // Opening the board clears the admin notification bell
+    fetch("/api/notifications", { method: "POST" }).catch(() => {});
   }, [user]);
 
   async function fetchNotes() {
